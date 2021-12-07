@@ -1,6 +1,5 @@
----
-Integrating frameworks: alternative stable states of the global pollination network structure
----
+# Integrating frameworks: alternative stable states of the global pollination network structure
+
 #### Author: Marcio Baldissera Cure
 
 O objetivo deste documento é apresentar o meu trabalho final da disciplina **Introdução a redes ecológicas - Teoria e Prática**, ministrado pelas professoras [Carine Emer](http://lattes.cnpq.br/2953372411320303) e [Fernanda Costa](http://lattes.cnpq.br/9433727692500645).
@@ -9,13 +8,13 @@ O objetivo deste documento é apresentar o meu trabalho final da disciplina **In
 
 ### Resumo
 
-Redes ecológicas são uma maneira de representar a estrurura das comunidades em termos de suas interações [Landi et al, 2018](https://doi.org/10.1007/s10144-018-0628-3). Por exemplo, a interação entre polinizadores e plantas é fundamental para a manutenção da biodiversidade e para a emergência de diversos serviços ecossistêmicos, inclusive os de suporte [MEA](https://www.millenniumassessment.org); [IPBES](https://ipbes.net/). As perdas de biodiversidade e as mudanças climáticas, que já ultrapassaram os limites seguros planetários ([Rockström et al, 2009](http://lattes.cnpq.br/9433727692500645)), poderiam impactar de forma irreversível as interações que estruturam os ecossistemas. De acordo com a teoria dos estados alternativos ([Beisner et al 2003](https://esajournals.onlinelibrary.wiley.com/doi/pdf/10.1890/1540-9295%282003%29001%5B0376%3AASSIE%5D2.0.CO%3B2)), sistemas submetidos a mudanças graduais podem responder de forma abrupta e não linear a mudanças ambientais ([Scheffer et al, 2001](https://www.nature.com/articles/35098000)). Dessa forma, eu testo a hipótese de que as métricas que descrevem a estrutura das redes de polinização na região tropical brasileira são sensíveis ao regime climático, assim como é a estrutura da vegetação ([Hirota et al, 2011](https://www.science.org/doi/10.1126/science.1210657)). Sendo assim, é possível testar o efeito das mudanças climáticas nestas redes ao longo de gradientes ambientais e, consequentemente, fazer inferências acerca da resiliência destas interações à mudanças futuras.
+Redes ecológicas são uma maneira de representar a estrurura das comunidades em termos de suas interações [Landi et al, 2018](https://doi.org/10.1007/s10144-018-0628-3). Por exemplo, a interação entre polinizadores e plantas é fundamental para a manutenção da biodiversidade e para a emergência de diversos serviços ecossistêmicos, inclusive os de suporte [MEA](https://www.millenniumassessment.org); [IPBES](https://ipbes.net/). As perdas de biodiversidade e as mudanças climáticas, que já ultrapassaram os limites seguros planetários ([Rockström et al, 2009](http://lattes.cnpq.br/9433727692500645)), poderiam impactar de forma irreversível as interações que estruturam os ecossistemas. De acordo com a teoria dos estados alternativos ([Beisner et al 2003](https://esajournals.onlinelibrary.wiley.com/doi/pdf/10.1890/1540-9295%282003%29001%5B0376%3AASSIE%5D2.0.CO%3B2); [Beisner, 2012](https://www.nature.com/scitable/knowledge/library/alternative-stable-states-78274277/)), sistemas submetidos a mudanças graduais podem responder de forma abrupta e não linear a mudanças ambientais ([Scheffer et al, 2001](https://www.nature.com/articles/35098000)). Dessa forma, eu testo a hipótese de que as métricas que descrevem a estrutura das redes de polinização na região tropical brasileira são sensíveis ao regime climático, assim como é a estrutura da vegetação ([Hirota et al, 2011](https://www.science.org/doi/10.1126/science.1210657)). Sendo assim, é possível testar o efeito das mudanças climáticas nestas redes ao longo de gradientes ambientais e, consequentemente, fazer inferências acerca da resiliência destas interações à mudanças futuras.
 
-Por exemplo, sabe-se que, na região tropical, florestas e savannas são estados alternativos em termos estruturais (i.e. cobertura do dossel) parcialmente determinados pelo regime de precipitação ([Hirota et al, 2011](https://www.science.org/doi/10.1126/science.1210657); [Staver et al, 2011](https://www.science.org/doi/10.1126/science.1210465)). Estados alternativos têm estrutura diferentes, interações diferentes, propriedades emergentes diferentes, ou seja, possuem uma identididade diferente [Scheffer et al 2011](). 
+Por exemplo, sabe-se que, na região tropical, florestas e savannas são estados alternativos em termos estruturais (i.e. cobertura do dossel) parcialmente determinados pelo regime de precipitação ([Hirota et al, 2011](https://www.science.org/doi/10.1126/science.1210657); [Staver et al, 2011](https://www.science.org/doi/10.1126/science.1210465)). Estados alternativos têm estrutura diferentes, interações diferentes, propriedades emergentes diferentes, ou seja, possuem uma identididade diferente.
 
 No caso de florestas e savannas, a cobertura do dossel é usada como variável de estado. Em um gradiente ambiental até um certo limiar de condições um estado do sistema domina. A partir dali, o outro estado passaria a dominar. Os dois estados podem ocorrer sob as mesmas condições e isso é devido ao balanço entre os feedbacks positivos e negativos que emergem das interações dentro do sistema.
 
-Eu pensei, entao, que como as redes ecológicas são formas de representar as interações dentro de ecossistemas, a estrutura destas redes poderia refletir a estabilidade em um gradiente de condições ambientais. 
+Eu pensei, então, que como as redes ecológicas são formas de representar as interações dentro de ecossistemas, a estrutura destas redes poderia refletir a estabilidade em um gradiente de condições ambientais. 
 
 A minha pergunta é: **existem estados alternativos em relação às métricas que definem a estrutura das redes em um gradiente climático?** Ou seja, vamos testar se **existe uma certa estabilidade interrompida abruptamente ao cruzar um certo limiar de condições**.
 
@@ -64,9 +63,10 @@ for (i in 1:144) {
 }
 ````
 
-### Extinção
+### Curva de extinção pra extrair a _robustez_ da rede.
  
 Agora, eu pego a lista que eu criei acima e aplico a função ```second.extinct``` para calcular a curva de extinção das plantas (low level) para cada __edge table__ contida nesta lista. Tudo isso coloquei em um objeto chamado de ```extinção_low```.
+
 
 ```
 extinção_low <- lista[1:144] %>% 
@@ -78,7 +78,7 @@ extinção_low <- lista[1:144] %>%
 ```
 
 
-### Robustez
+### Robustez da rede
 
 Agora, finalmente calculamos a robustez que é o cálculo da área abaixo da curva de extinção gerada pela função anterior. Chamei o resultado de ```robustez_low``` e tirei do formato _lista_.
 
@@ -113,7 +113,7 @@ xy <- data.frame(x=info$Longitude[-c(133, 139, 140,141,145)],
 
 Note que eu já salvei os dados e agora estou simplesmente carregando como raster e extraindo os valores dos pixels correspondentes às nossas coordenadas. Para isso usei o pacote ```raster```.
 
-Dados climáticos:
+### Dados climáticos:
 
 ```
 MAT <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio1.bil") %>% raster::extract(xy)
@@ -172,7 +172,7 @@ Agora, vamos ver como as métricas variam em função das condições ambientais
 
 Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos. O tamanho dos pontos corresponde ao número de espécies.
 
-#### Temperatura média anual
+### Temperatura média anual
 
 ```
 # Mean annual temperature
@@ -204,7 +204,7 @@ MAT.inter <- dados1 %>% ggplot()+
 <img width="90%" src="métricas_vs_MAT.png"/>
 
 
-#### Precipitação média anual
+### Precipitação média anual
 
 ```
 # Mean annual precipitation
@@ -236,7 +236,7 @@ MAP.inter <- dados1 %>% ggplot()+
 <img width="90%" src="métricas_vs_MAP.png"/>
 
 
-#### Sazonalidade na precipitação (coeficiente de variação)
+### Sazonalidade na precipitação (coeficiente de variação)
 
 ```
 # precipitation seasonality (coefficient of variation)
@@ -268,7 +268,7 @@ CV.inter <- dados1 %>% ggplot()+
 <img width="90%" src="métricas_vs_CV.png"/>
 
 
-#### Sazonalidade da temperatura
+### Sazonalidade da temperatura
 
 ```
 # temperature seasonality
@@ -300,7 +300,7 @@ TS.inter <- dados1 %>% ggplot()+
 <img width="90%" src="métricas_vs_TS.png"/>
 
 
-#### Densidade de distribuição das métricas
+### Densidade de distribuição das métricas
 
 ```
 densidade_rob <- dados1 %>% ggplot() +
@@ -328,6 +328,7 @@ densidade_con <- dados1 %>% ggplot() +
 
 
 ## Considerações finais:
+
 
 O próximo passo seria testar estas mesmas métricas, mas separando por:
 
