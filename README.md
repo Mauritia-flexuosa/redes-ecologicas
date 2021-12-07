@@ -187,7 +187,7 @@ dados1 <- rbind(info_tropical, info_high_lat)
 
 Agora, vamos ver como as métricas variam em função das condições ambientais.
 
-Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos. O tamanho dos pontos corresponde ao número de espécies.
+Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos (sem utilidade pra nossa pergunta). O tamanho dos pontos corresponde ao número de espécies.
 
 ### Temperatura média anual
 
