@@ -25,9 +25,10 @@ Os dados de polinização para a região tropical do Brasil foram obtidos a part
 
 - As métricas de rede utilizadas neste trabalho são:
 
-1. Conectividade;
-2. Robustez; e
-3. Número de interações
+1. Conectância: proporção dos links potenciais que são realizados.
+2. Robustez à perda de espécies (nodes): e
+3. Número de interações na rede:
+4. Número de espécies (representado pelo tamanho dos pontos)
 
 - As variáveis ambientais são:
 
