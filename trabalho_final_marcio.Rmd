@@ -43,7 +43,7 @@ Daí, separei algumas informações (objeto chamado de ```info```) de um dos arq
 
 ```{r}
 info <- read.csv(lista_com_os_dados_baixados[1], h = T, row.names = 1) %>%
-  select_("Species", "Interactions", "Connectance", "Latitude", "Longitude")
+  select("Species", "Interactions", "Connectance", "Latitude", "Longitude")
 ```
 
 
