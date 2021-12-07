@@ -238,3 +238,32 @@ densidade_con <- dados1 %>% ggplot() +
 # png("densidade.png", res=300, width =3000, height = 2300)
 # (densidade_rob|densidade_int|densidade_con)
 # dev.off()
+
+
+### boxplots
+box_rob <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=robustez_low, x= factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Robustness")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+box_int <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=Interactions %>% log, x= factor(Região),fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Interactions (log)")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+box_con <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=Connectance, x=factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Connectance")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+
+png("boxplot_metricas.png", res=300, width = 2300, height = 2000)
+(box_rob|box_int|box_con)
+dev.off()
+
+
+t.test(dados1$robustez_low~factor(dados1$Região))
+t.test(dados1$Connectance~factor(dados1$Região))
+t.test(dados1$Interactions %>% log~factor(dados1$Região))

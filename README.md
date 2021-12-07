@@ -23,6 +23,21 @@ A minha pergunta é: **existem estados alternativos em relação às métricas q
 
 Os dados de polinização para a região tropical do Brasil foram obtidos a partir do [web-of-life dataset](https://www.web-of-life.es). Os dados climáticos foram obtidos usando a função ```raster::getData``` que busca os dados do [WorldClim](https://www.worldclim.org). Mas você também pode baixar direto do site.
 
+- As métricas de rede utilizadas neste trabalho são:
+
+1. Conectividade;
+2. Robustez; e
+3. Número de interações
+
+- As variáveis ambientais são:
+
+1. Temperatura média anual;
+2. Precipitação média anual;
+3. Sazonalidade da precipitação (cv); e
+4. Sazonalidade da temperatura.
+
+---
+
 Começa carregando os pacotes necessários:
 
 ```
@@ -146,7 +161,9 @@ dados <- cbind("Species" = info[-c(133, 139, 140,141,145),] %>%
                "Longitude"=info1$Longitude)
 ```
 
-Vou separar os dados da regiao tropical das altas latitudes:
+Na verdade **eu não precisaria separar a regiao tropical das altas latitudes pra testar por estados alternativos**, mas me deu vontade de visualizar essa diferença nos resultados e mantive em todos os gráficos.
+
+Separando...
 
 ```
 info_tropical <- dados %>% 
@@ -158,7 +175,7 @@ info_high_lat <- dados  %>%
   add_column(Região="High latitude")
 ```
 
-...e salvar em um objeto chamado dados1.
+...e juntando novamente.
 
 ```
 dados1 <- rbind(info_tropical, info_high_lat)
@@ -168,7 +185,7 @@ dados1 <- rbind(info_tropical, info_high_lat)
 ## Resultados:
 
 
-Agora, vamos ver como as métricas variam em função das condições ambientais usando o ```ggplot2```.
+Agora, vamos ver como as métricas variam em função das condições ambientais.
 
 Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos. O tamanho dos pontos corresponde ao número de espécies.
 
@@ -300,31 +317,30 @@ TS.inter <- dados1 %>% ggplot()+
 <img width="90%" src="métricas_vs_TS.png"/>
 
 
-### Densidade de distribuição das métricas
+### Diferença das métricas nos trópicos e nas altas latitudes.
 
 ```
-densidade_rob <- dados1 %>% ggplot() +
-  geom_density(aes(x=robustez_low, col = factor(Região), alpha=0.5), show.legend = F)+
-  xlab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+### boxplots
+box_rob <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=robustez_low, x= factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Robustness")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
   ggtitle("A")
 
-densidade_int <- dados1 %>% ggplot() +
-  geom_density(aes(x=Interactions %>% log, col = factor(Região), alpha=0.5), show.legend = F)+
-  xlab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+box_int <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=Interactions %>% log, x= factor(Região),fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Interactions (log)")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
   ggtitle("B")
 
-densidade_con <- dados1 %>% ggplot() +
-  geom_density(aes(x=Connectance, col = factor(Região), alpha=0.5), show.legend = F)+
-  xlab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+box_con <- dados1 %>% ggplot() +
+  geom_boxplot(aes(y=Connectance, x=factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Connectance")+
+  scale_fill_manual(values=c("darkgrey", "orange2"))+
   ggtitle("C")
-
 ```
 
-<img weight="90%" src="densidade.png"/>
-
+<img src="boxplot_metricas.png"/>
 
 
 ## Considerações finais:
