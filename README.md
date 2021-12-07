@@ -1,7 +1,6 @@
 ---
-title: "Integrating frameworks: alternative stable states of the global pollination network structure"
+Integrating frameworks: alternative stable states of the global pollination network structure
 ---
-
 #### Author: Marcio Baldissera Cure
 
 O objetivo deste documento é apresentar o meu trabalho final da disciplina **Introdução a redes ecológicas - Teoria e Prática**, ministrado pelas professoras [Carine Emer](http://lattes.cnpq.br/2953372411320303) e [Fernanda Costa](http://lattes.cnpq.br/9433727692500645).
@@ -31,6 +30,7 @@ Começa carregando os pacotes necessários:
 library(tidyverse)
 library(bipartite)
 library(raster)
+library(patchwork)
 ```
 
 Unzipa os dados baixados do web-of-life:
@@ -58,17 +58,27 @@ Aqui eu leio cada elemento da lista como um arquivo .csv. Note que a classe do o
 
 ```
 lista <- list(NULL)
-for (i in 3:140) {
-  lista[i] <- lista_com_os_dados_baixados[i] %>% map(read.csv, row.names=1,h=T)  
+for (i in 1:144) {
+  lista[i] <- lista_com_os_dados_baixados[i] %>%
+  map(read.csv, row.names=1,h=T)  
 }
 ````
 
+### Extinção
+ 
 Agora, eu pego a lista que eu criei acima e aplico a função ```second.extinct``` para calcular a curva de extinção das plantas (low level) para cada __edge table__ contida nesta lista. Tudo isso coloquei em um objeto chamado de ```extinção_low```.
 
 ```
-extinção_low <- lista[3:138] %>% 
-  map(second.extinct, participant="lower", method="random", nrep=30, details=FALSE) 
+extinção_low <- lista[1:144] %>% 
+  map(second.extinct,
+      participant="lower",
+      method="random",
+      nrep=30,
+      details=FALSE) 
 ```
+
+
+### Robustez
 
 Agora, finalmente calculamos a robustez que é o cálculo da área abaixo da curva de extinção gerada pela função anterior. Chamei o resultado de ```robustez_low``` e tirei do formato _lista_.
 
@@ -77,17 +87,6 @@ robustez_low <- extinção_low %>%
   map(robustness) %>%
   unlist()
   ```
-
-Plotei a densidade de distribuição dos dados usando o pacote ```ggplot2``` contido no pacote ```tidyverse``` para testar (visualmente) por bimodalidade.
-
-
-```
-robust_map <- robustez_low %>% unlist %>% 
- as.data.frame %>% ggplot()+geom_density(aes(x=.))
-```
-
-<img width="90%" src="robustez_low.png"/>
-
 
 Poderia fazer isso para outras funções também, como por exemplo, calcular a especialização complementar h2 como no exemplo abaixo.
 
@@ -100,14 +99,14 @@ especialização_complementar_h2 <- lista %>%
 
 Mas eu não vou fazer isso porque demora muito. :)
 
-
 Aqui eu uso aquelas outras informações que me interessam que eu chamei lá em cima de ```info```.
 
 Destes dados eu extraio as coordenadas (Longitude e Latitude dos meus dados).
 
 
 ```
-xy <- data.frame(x=info$Longitude, y=info$Latitude)
+xy <- data.frame(x=info$Longitude[-c(133, 139, 140,141,145)],
+                 y=info$Latitude[-c(133, 139, 140,141,145)])
 ```
 
 #### Agora as variáveis ambientais:
@@ -117,27 +116,218 @@ Note que eu já salvei os dados e agora estou simplesmente carregando como raste
 Dados climáticos:
 
 ```
-# Temperatura média annual
-MAT <- raster("/home/marcio/PROJETOS-GIT/redes/wc/bio1.bil") %>% raster::extract(xy)
+MAT <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio1.bil") %>% raster::extract(xy)
 
-# Precipitação média anual
-MAP <- raster("/home/marcio/PROJETOS-GIT/redes/wc/bio12.bil") %>% raster::extract(xy)
+MAP <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio12.bil") %>% raster::extract(xy)
 
-# coeficiente de variação da sazonalidade da precipitação
-CV <- raster("/home/marcio/PROJETOS-GIT/redes/wc/bio15.bil") %>% raster::extract(xy) 
+CV <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio15.bil") %>% raster::extract(xy) 
 
-# Sazonalidade da temperatura
-TS <- raster("/home/marcio/PROJETOS-GIT/redes/wc/bio4.bil") %>% raster::extract(xy) 
+TS <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio4.bil") %>% raster::extract(xy) 
 
-# Precipitação no quartil mais seco.
 PDQ <- raster("/home/marcio/PROJETOS-GIT/redes_ecologicas/wc2-5/bio17.bil") %>% raster::extract(xy) 
+```
+
+Seleciona as informações contidas no objeto que chamamos de ```info```:
 
 ```
+info1 <- info[-c(133, 139, 140,141,145),] %>% select_("Species", "Interactions", "Connectance", "Latitude", "Longitude")
+```
+
+```
+dados <- cbind("Species" = info[-c(133, 139, 140,141,145),] %>%
+                 select_("Species"),
+               "Interactions" = info[-c(133, 139, 140,141,145),] %>%
+                 select_("Interactions") ,
+               "Connectance" = info[-c(133, 139, 140,141,145),] %>%
+                 select_("Connectance") ,
+               robustez_low,
+               MAT, MAP, CV, TS, PDQ,
+               "Latitude"=info1$Latitude,
+               "Longitude"=info1$Longitude)
+```
+
+Vou separar os dados da regiao tropical das altas latitudes:
+
+```
+info_tropical <- dados %>% 
+  filter(Latitude>=-25 & Latitude<=25) %>%
+  add_column(Região="Tropical")
+
+info_high_lat <- dados  %>%
+  filter(Latitude<-25 & Latitude>25) %>%
+  add_column(Região="High latitude")
+```
+
+...e salvar em um objeto chamado dados1.
+
+```
+dados1 <- rbind(info_tropical, info_high_lat)
+```
+
 
 ## Resultados:
 
 
+Agora, vamos ver como as métricas variam em função das condições ambientais usando o ```ggplot2```.
 
+Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos. O tamanho dos pontos corresponde ao número de espécies.
+
+#### Temperatura média anual
+
+```
+# Mean annual temperature
+MAT.robus <- dados1 %>% ggplot()+
+  aes(x=MAT, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual temperature")+
+  ylab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+MAT.conn <- dados1 %>% ggplot()+
+  aes(x=MAT, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual temperature")+
+  ylab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+MAT.inter <- dados1 %>% ggplot()+
+  aes(x=MAT, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual temperature")+
+  ylab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+```
+
+<img width="90%" src="métricas_vs_MAT.png"/>
+
+
+#### Precipitação média anual
+
+```
+# Mean annual precipitation
+MAP.robus <- dados1 %>% ggplot()+
+  aes(x=MAP, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual precipitation")+
+  ylab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+MAP.conn <- dados1 %>% ggplot()+
+  aes(x=MAP, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual precipitation")+
+  ylab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+MAP.inter <- dados1 %>% ggplot()+
+  aes(x=MAP, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual precipitation")+
+  ylab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+```
+
+<img width="90%" src="métricas_vs_MAP.png"/>
+
+
+#### Sazonalidade na precipitação (coeficiente de variação)
+
+```
+# precipitation seasonality (coefficient of variation)
+CV.robus <- dados1 %>% ggplot()+
+  aes(x=CV, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Precipitation seasonality (cv)")+
+  ylab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+CV.conn <- dados1 %>% ggplot()+
+  aes(x=CV, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Precipitation seasonality (cv)")+
+  ylab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+CV.inter <- dados1 %>% ggplot()+
+  aes(x=CV, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Precipitation seasonality (cv)")+
+  ylab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+```
+
+<img width="90%" src="métricas_vs_CV.png"/>
+
+
+#### Sazonalidade da temperatura
+
+```
+# temperature seasonality
+TS.robus <- dados1 %>% ggplot()+
+  aes(x=TS, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Temperature seasonality")+
+  ylab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+TS.conn <- dados1 %>% ggplot()+
+  aes(x=TS, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Temperature seasonality")+
+  ylab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+TS.inter <- dados1 %>% ggplot()+
+  aes(x=TS, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+  geom_point(show.legend = F)+
+  xlab("Temperature seasonality")+
+  ylab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+```
+
+<img width="90%" src="métricas_vs_TS.png"/>
+
+
+#### Densidade de distribuição das métricas
+
+```
+densidade_rob <- dados1 %>% ggplot() +
+  geom_density(aes(x=robustez_low, col = factor(Região), alpha=0.5), show.legend = F)+
+  xlab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("A")
+
+densidade_int <- dados1 %>% ggplot() +
+  geom_density(aes(x=Interactions %>% log, col = factor(Região), alpha=0.5), show.legend = F)+
+  xlab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("B")
+
+densidade_con <- dados1 %>% ggplot() +
+  geom_density(aes(x=Connectance, col = factor(Região), alpha=0.5), show.legend = F)+
+  xlab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2"))+
+  ggtitle("C")
+
+```
+
+<img weight="90%" src="densidade.png"/>
+
+
+
+## Considerações finais:
 
 O próximo passo seria testar estas mesmas métricas, mas separando por:
 
