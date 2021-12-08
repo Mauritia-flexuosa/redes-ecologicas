@@ -39,7 +39,6 @@ Os dados de polinização para a região tropical do Brasil foram obtidos a part
 
 ---
 
-Começa carregando os pacotes necessários:
 
 ```
 library(tidyverse)
@@ -183,12 +182,25 @@ dados1 <- rbind(info_tropical, info_high_lat)
 ```
 
 
-## Resultados:
+## Resultados
 
+#### Os resultados mostram como as métricas de rede variam em função das condições ambientais. 
 
-Agora, vamos ver como as métricas variam em função das condições ambientais.
+#### Há bistabilidade?
+
+Aqui eu vou mostrar a densidade de distribuição das mericas pra ver se há bistabilidade
+
+<img src= "bi_rob.png"/>
+
+.
+.
+.
 
 Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos (sem utilidade pra nossa pergunta). O tamanho dos pontos corresponde ao número de espécies.
+
+### PCA
+
+PCA x variáveis ambientais
 
 ### Temperatura média anual
 
