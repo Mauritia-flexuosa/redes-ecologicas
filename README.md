@@ -286,7 +286,7 @@ pc_ts <-     ggplot()+
   ggtitle("D")
 ```
 
-<img src= "pca_envir.png"/>
+<img src= "pc_envir.png"/>
 
 
 ### Agora com os dados brutos das métricas:
