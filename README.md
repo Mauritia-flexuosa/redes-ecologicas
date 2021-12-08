@@ -21,7 +21,7 @@ A minha pergunta é: **existem estados alternativos em relação às métricas q
 
 ## Métodos
 
-Os dados de polinização para a região tropical do Brasil foram obtidos a partir do [web-of-life dataset](https://www.web-of-life.es). Os dados climáticos foram obtidos usando a função ```raster::getData``` que busca os dados do [WorldClim](https://www.worldclim.org). Mas você também pode baixar direto do site.
+Os dados de polinização para a região tropical do Brasil foram obtidos a partir do web-of-life dataset. Os dados climáticos foram obtidos usando a função raster::getData que busca os dados do WorldClim. Mas você também pode baixar direto do site.
 
 Para ver se há "indícios" de estados alternativos vamos testar pela bimodalidade das métricas de rede utilizadas de forma visual através das curvas de distribuição de densidade. 
 
