@@ -100,23 +100,23 @@ dados1 <- rbind(info_tropical, info_high_lat)
 
 # Gráficos para explorar por bimodalidade nas distribuições
 
-bi_rob <- dados1 %>% ggplot(aes(x=robustez_low)) +
+bi_rob <- dd %>% ggplot(aes(x=robustez_low)) +
   geom_histogram(alpha=0.5, show.legend = F,binwidth = .01)+
-  geom_density(alpha=.7)+
+  geom_density(aes(alpha=.7, color = factor(cluster)), show.legend = F)+
   xlab("Robustness")+
   scale_fill_manual(values=c("purple2"))+
   ggtitle("Robustness")
 
-bi_int <- dados1 %>% ggplot(aes(x=Interactions %>% log)) +
+bi_int <- dd %>% ggplot(aes(x=Interactions %>% log)) +
   geom_histogram(alpha=0.5, show.legend = F,binwidth = 0.1)+
-  geom_density(alpha=.7)+
+  geom_density(aes(alpha=.7, color = factor(cluster)), show.legend = F)+
   xlab("Number of interactions (log)")+
   scale_fill_manual(values=c("purple2"))+
   ggtitle("Interactions")
 
-bi_con <- dados1 %>% ggplot(aes(x=Connectance)) +
+bi_con <- dd %>% ggplot(aes(x=Connectance)) +
   geom_histogram(alpha=0.5, show.legend = F, binwidth = .01)+
-  geom_density(alpha=.7)+
+  geom_density(aes(alpha=.7, color = factor(cluster)), show.legend = F)+
   xlab("Connectance")+
   scale_fill_manual(values=c("purple2"))+
   ggtitle("Connectance")
@@ -223,6 +223,44 @@ pca_plot <- ggplot()+
 # dev.off()
 
 
+pc_mat <-     ggplot()+
+  aes(x=dd$MAT, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual temperature")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("A")
+
+pc_map <-     ggplot()+
+  aes(x=dd$MAP, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual precipitation")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("B")
+
+pc_cv <-     ggplot()+
+  aes(x=dd$CV, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Precipitation seasonality (cv)")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("C")
+
+pc_ts <-     ggplot()+
+  aes(x=dd$MAT, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Temperature seasonality")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("D")
+
+
+png("/home/marcio/PROJETOS-GIT/redes1/pc_envir.png", res=300, width = 3000, height = 2600)
+(pc_mat|pc_map)/(pc_cv|pc_ts)
+dev.off()
+
+
 # Mean annual temperature
 MAT.robus <- dd %>% ggplot()+
   aes(x=MAT, y=robustez_low, size=Species, alpha=0.6, color=factor(dd$cluster))+
@@ -317,9 +355,9 @@ TS.inter <- dd %>% ggplot()+
   scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("C")
 
 
-#  png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_MAT.png", res = 300, width=3000, height = 2400)
-#  (MAT.robus|MAT.conn|MAT.inter)
-#  dev.off()
+ png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_MAT.png", res = 300, width=3000, height = 2400)
+ (MAT.robus|MAT.conn|MAT.inter)
+ dev.off()
 # 
 # png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_MAP.png", res = 300, width=3000, height = 2400)
 #   (MAP.robus|MAP.conn|MAP.inter)

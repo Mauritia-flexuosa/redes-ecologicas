@@ -184,11 +184,39 @@ dados1 <- rbind(info_tropical, info_high_lat)
 ```
 
 
+
+#### Agrupando por k-means
+
+A função ```fviz_nbclust``` ajuda a escolher o número ótimo de clusters. O gráfico abaixo mostra a variância dentro dos clusters. O "joelho" no gráfico indica o número de grupos ideal, pois a partir daí se aumentamos o número de grupos a variação é insignificante.
+
+<img src= "cluster_choice.png"/>
+
+Então, como vimos, o número ótimo de clusters é 5.
+```
+cluster <- fviz_nbclust(dados_std, FUNcluster = kmeans, method = "wss")+
+  geom_vline(xintercept = 5, color="darkgrey")
+```
+
+Agora separamos as redes em cinco grupos usando a função ```kmeans```.
+
+
+```
+km.res <- kmeans(iris.scaled, 3, nstart = 10)
+```
+
 ## Resultados
 
-#### Há bimodalidade?
+##### PCA
 
-Os resultados mostram a densidade de distribuição das métricas de rede pra ver se há bimodalidade na sua distribuição.
+Distibuição dos dados em relação aos dois primeiros eixos principais da PCA que juntos explicam 87,37% da variação nos dados. O biplot da PCA mostra como os dados estão "espalhados" em relação às métricas de rede onde as cores correspondem a cada um dos 5 grupos clusterizados pelo kmeans.
+
+
+<img src= "pca_metricas.png"/>
+
+
+### Há bimodalidade?
+
+Pelos resultados mostrados nas curvas de distribuição de densidade das métricas de rede, há multimodalidade nas métricas que estamos analisando.
 
 ```
 bi_rob <- dados1 %>% ggplot(aes(x=robustez_low)) +
@@ -217,51 +245,53 @@ bi_con <- dados1 %>% ggplot(aes(x=Connectance)) +
 <img src= "bi_rob.png"/>
 
 
-#### Agrupando por k-means
+### As mudanças são lineares ou há mudanças abruptas nas variáveis de estado?
 
-A função ```fviz_nbclust``` ajuda a escolher o número ótimo de clusters. O gráfico abaixo mostra a variância dentro dos clusters. O "joelho" no gráfico indica o número de grupos ideal, pois a partir daí se aumentamos o número de grupos a variação é insignificante.
+Os resultados abaixo mostram como as métricas de rede variam em função das condições ambientais. 
 
-<img src= "cluster_choice.png"/>
 
-Então, como vimos, o número ótimo de clusters é 5.
-```
-cluster <- fviz_nbclust(dados_std, FUNcluster = kmeans, method = "wss")+
-  geom_vline(xintercept = 5, color="darkgrey")
-```
-
-Agora separamos as redes em cinco grupos usando a função ```kmeans```.
-
+#### PCA x variáveis ambientais
 
 ```
-km.res <- kmeans(iris.scaled, 3, nstart = 10)
+pc_mat <-     ggplot()+
+  aes(x=dd$MAT, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual temperature")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("A")
+
+pc_map <-     ggplot()+
+  aes(x=dd$MAP, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Mean annual precipitation")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("B")
+
+pc_cv <-     ggplot()+
+  aes(x=dd$CV, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Precipitation seasonality (cv)")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("C")
+
+pc_ts <-     ggplot()+
+  aes(x=dd$MAT, y=dados_pca$PC1, alpha=0.6, color=factor(dd$cluster))+
+  geom_point(show.legend = F)+
+  xlab("Temperature seasonality")+
+  ylab("PC1")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("D")
 ```
 
-O plot é similar ao do PCA como veremos adiante.
+<img src= "pca_envir.png"/>
 
+
+### Agora com os dados brutos das métricas:
  
- <img src= "cluster_pca.png"/>
-
-##### PCA
-
-Distibuição dos dados em relação aos dois primeiros eixos principais da PCA que juntos explicam 87,37% da variação nos dados. 
-
-<img src= "pca_metricas.png"/>
-
-
-
-#### Mudanças são lineares ou há mudanças abruptas nas variáveis de estado?
-
-Os resultados mostram como as métricas de rede variam em função das condições ambientais. 
-
-
-
-
-
-Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos (sem utilidade pra nossa pergunta). O tamanho dos pontos corresponde ao número de espécies.
-
-### PCA
-
-PCA x variáveis ambientais
+**O tamanho dos pontos corresponde ao número de espécies.**
 
 ### Temperatura média anual
 
