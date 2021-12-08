@@ -21,9 +21,19 @@ A minha pergunta é: **existem estados alternativos em relação às métricas q
 
 ## Métodos
 
-Para ver se há "indícios" de estados alternativos, primeiro vamos testar pela bimodalidade das métricas de rede utilizadas de forma visual através das curvas de distribuição de densidade. De forma ideal, teríamos que testar estatisticamente se existe realmente bimodalidade. Eu primeiro faço uma PCA para reduzir as informações que os dados trazem em dois eixos e plotamos para ver se grupos são formados. Após, veremos como estas métricas se comportam em um gradiente de condições ambientais (cada variável climática).
-
 Os dados de polinização para a região tropical do Brasil foram obtidos a partir do [web-of-life dataset](https://www.web-of-life.es). Os dados climáticos foram obtidos usando a função ```raster::getData``` que busca os dados do [WorldClim](https://www.worldclim.org). Mas você também pode baixar direto do site.
+
+Para ver se há "indícios" de estados alternativos vamos testar pela bimodalidade das métricas de rede utilizadas de forma visual através das curvas de distribuição de densidade. 
+
+De forma ideal, teríamos que testar estatisticamente se existe realmente bimodalidade.
+
+Eu agrupei os os dados utilizando k-means. 
+
+Eu fiz uma PCA para reduzir as informações que os dados trazem em dois eixos e plotamos para ver como grupos (diferentes cores) estão distribuidos.
+
+Para ver como as métricas de rede variam em um gradiente de condições ambientais (cada variável climática) eu plotei as métricas pelas variáveis ambientais e plotei o primeiro eixo do PCA pelas variáveis ambientais.
+
+
 
 - As métricas de rede utilizadas neste trabalho são:
 
