@@ -21,13 +21,15 @@ A minha pergunta é: **existem estados alternativos em relação às métricas q
 
 ## Métodos
 
+Para ver se há "indícios" de estados alternativos, primeiro vamos testar pela bimodalidade das métricas de rede utilizadas de forma visual através das curvas de distribuição de densidade. De forma ideal, teríamos que testar estatisticamente se existe realmente bimodalidade. Eu primeiro faço uma PCA para reduzir as informações que os dados trazem em dois eixos e plotamos para ver se grupos são formados. Após, veremos como estas métricas se comportam em um gradiente de condições ambientais (cada variável climática).
+
 Os dados de polinização para a região tropical do Brasil foram obtidos a partir do [web-of-life dataset](https://www.web-of-life.es). Os dados climáticos foram obtidos usando a função ```raster::getData``` que busca os dados do [WorldClim](https://www.worldclim.org). Mas você também pode baixar direto do site.
 
 - As métricas de rede utilizadas neste trabalho são:
 
 1. Conectância: proporção dos links potenciais que são realizados.
-2. Robustez à perda de espécies (nodes): e
-3. Número de interações na rede:
+2. Robustez à perda de espécies (nodes)
+3. Número de interações na rede
 4. Número de espécies (representado pelo tamanho dos pontos)
 
 - As variáveis ambientais são:
@@ -161,7 +163,7 @@ dados <- cbind("Species" = info[-c(133, 139, 140,141,145),] %>%
                "Longitude"=info1$Longitude)
 ```
 
-Na verdade **eu não precisaria separar a regiao tropical das altas latitudes pra testar por estados alternativos**, mas me deu vontade de visualizar essa diferença nos resultados e mantive em todos os gráficos.
+Na verdade **eu não precisaria separar a regiao tropical das altas latitudes pra testar por estados alternativos**, mas me deu vontade de visualizar essa diferença nos resultados e mantive em todos os gráficos. Dei uma explorada nestas diferenças e eu mostro lá no final.
 
 Separando...
 
@@ -184,17 +186,76 @@ dados1 <- rbind(info_tropical, info_high_lat)
 
 ## Resultados
 
-#### Os resultados mostram como as métricas de rede variam em função das condições ambientais. 
+#### Há bimodalidade?
 
-#### Há bistabilidade?
+Os resultados mostram a densidade de distribuição das métricas de rede pra ver se há bimodalidade na sua distribuição.
 
-Aqui eu vou mostrar a densidade de distribuição das mericas pra ver se há bistabilidade
+```
+bi_rob <- dados1 %>% ggplot(aes(x=robustez_low)) +
+  geom_histogram(alpha=0.5, show.legend = F,binwidth = .01)+
+  geom_density(alpha=.7)+
+  xlab("Robustness")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Robustness")
+
+bi_int <- dados1 %>% ggplot(aes(x=Interactions %>% log)) +
+  geom_histogram(alpha=0.5, show.legend = F,binwidth = 0.1)+
+  geom_density(alpha=.7)+
+  xlab("Number of interactions (log)")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Interactions")
+
+bi_con <- dados1 %>% ggplot(aes(x=Connectance)) +
+  geom_histogram(alpha=0.5, show.legend = F, binwidth = .01)+
+  geom_density(alpha=.7)+
+  xlab("Connectance")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Connectance")
+
+```
 
 <img src= "bi_rob.png"/>
 
-.
-.
-.
+
+#### Agrupando por k-means
+
+A função ```fviz_nbclust``` ajuda a escolher o número ótimo de clusters. O gráfico abaixo mostra a variância dentro dos clusters. O "joelho" no gráfico indica o número de grupos ideal, pois a partir daí se aumentamos o número de grupos a variação é insignificante.
+
+<img src= "cluster_choice.png"/>
+
+Então, como vimos, o número ótimo de clusters é 5.
+```
+cluster <- fviz_nbclust(dados_std, FUNcluster = kmeans, method = "wss")+
+  geom_vline(xintercept = 5, color="darkgrey")
+```
+
+Agora separamos as redes em cinco grupos usando a função ```kmeans```.
+
+
+```
+km.res <- kmeans(iris.scaled, 3, nstart = 10)
+```
+
+O plot é similar ao do PCA como veremos adiante.
+
+ 
+ <img src= "cluster_pca.png"/>
+
+##### PCA
+
+Distibuição dos dados em relação aos dois primeiros eixos principais da PCA que juntos explicam 87,37% da variação nos dados. 
+
+<img src= "pca_metricas.png"/>
+
+
+
+#### Mudanças são lineares ou há mudanças abruptas nas variáveis de estado?
+
+Os resultados mostram como as métricas de rede variam em função das condições ambientais. 
+
+
+
+
 
 Os pontos de cor laranja representam as amostragens feitas em lugares tropicais e os pontos cinza são aqueles amostrados fora dos trópicos (sem utilidade pra nossa pergunta). O tamanho dos pontos corresponde ao número de espécies.
 

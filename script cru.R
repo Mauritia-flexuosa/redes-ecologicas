@@ -1,16 +1,19 @@
 # Ecological network analysis 
 # Developed by Marcio Baldissera Cure
- 
+
 library(tidyverse)
 library(bipartite)
 library(raster)
 library(patchwork)
 library(RColorBrewer)
+library(vegan)
+library(factoextra)
+
 
 lista_com_os_dados_baixados <- unzip("./web-of-life_2021-12-01_213658.zip")%>%
   as.list
 
-info <- read.csv("./references.csv", h = T, row.names = 1) %>%
+info <- read.csv("/home/marcio/PROJETOS-GIT/redes_ecologicas/references.csv", h = T, row.names = 1) %>%
   select_("Species", "Interactions", "Connectance", "Latitude", "Longitude") 
 
 
@@ -39,7 +42,7 @@ robust_map <- robustez_low %>%
   unlist %>% 
   as.data.frame %>%
   ggplot() +
-   geom_density(aes(x=.))
+  geom_density(aes(x=.))
 
 # png("robustez_low.png", res = 300, width = 2000, height = 2200)
 # robust_map
@@ -95,175 +98,289 @@ dados1 <- rbind(info_tropical, info_high_lat)
 
 # write.table(dados1, "dados1.txt")
 
+# Gráficos para explorar por bimodalidade nas distribuições
+
+bi_rob <- dados1 %>% ggplot(aes(x=robustez_low)) +
+  geom_histogram(alpha=0.5, show.legend = F,binwidth = .01)+
+  geom_density(alpha=.7)+
+  xlab("Robustness")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Robustness")
+
+bi_int <- dados1 %>% ggplot(aes(x=Interactions %>% log)) +
+  geom_histogram(alpha=0.5, show.legend = F,binwidth = 0.1)+
+  geom_density(alpha=.7)+
+  xlab("Number of interactions (log)")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Interactions")
+
+bi_con <- dados1 %>% ggplot(aes(x=Connectance)) +
+  geom_histogram(alpha=0.5, show.legend = F, binwidth = .01)+
+  geom_density(alpha=.7)+
+  xlab("Connectance")+
+  scale_fill_manual(values=c("purple2"))+
+  ggtitle("Connectance")
+
+
+
+# png("/home/marcio/PROJETOS-GIT/redes1/bi_rob.png", res = 300, width = 2400, height = 2000)
+# (bi_rob/bi_int/bi_con)
+# dev.off()
+
+# Clusterização por K-means
+
+dados_std <- dados1 %>%
+dplyr::select("Interactions", "robustez_low", "Species", "Connectance") %>% 
+  decostand(method = "standardize")
+
+# Para determinar o número ótimo de clusters
+cluster <- fviz_nbclust(dados_std, FUNcluster = kmeans, method = "wss")+
+  geom_vline(xintercept = 5, "dashed", color="darkgrey")
+
+png("/home/marcio/PROJETOS-GIT/redes1/cluster_choice.png")
+cluster
+dev.off()
+
+# Realizando a clusterização por k-means
+
+set.seed(123)
+km.res <- kmeans(dados_std, 5, nstart = 25)
+print(km.res)
+
+aggregate(dados1 %>%
+            dplyr::select("Interactions", "robustez_low", "Species", "Connectance") %>% 
+            decostand(method = "standardize"), by=list(cluster=km.res$cluster), mean)
+
+dd <- cbind(dados1, cluster = km.res$cluster)
+head(dd)
+
+?fviz_cluster
+clusclus <- fviz_cluster(km.res,
+             dados1 %>%
+               dplyr::select("Interactions", "robustez_low", "Species", "Connectance"),
+             ellipse.type = "norm",
+             geom = "point")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))
+
+png("/home/marcio/PROJETOS-GIT/redes1/cluster_pca.png", res=300, width = 2400, height = 2000)
+clusclus
+dev.off()
+
+# PCA
+
+PCA <- dados1 %>%
+  dplyr::select("Interactions", "Connectance", "robustez_low", "Species") %>%
+  vegan::decostand(method = "standardize") %>%
+  prcomp 
+
+PCA %>% summary
+# Eigenvalues
+
+PC1 <- PCA %>% 
+  broom::tidy() %>%
+  dplyr::filter(PC==1) %>%
+  dplyr::select("value")
+
+PC2 <- PCA %>% 
+  broom::tidy() %>%
+  dplyr::filter(PC==2) %>%
+  dplyr::select("value")
+
+dados_pca <- data.frame(PC1 = PC1$value, PC2 = PC2$value)
+
+# Eigenvetors
+PCA$rotation[,1] %>%
+  broom::tidy() %>% 
+  rename(variables = names, PC1 = x) %>% 
+  knitr::kable()
+
+PCA$rotation[,2] %>%
+  broom::tidy() %>% 
+  rename(variables = names, PC2 = x) %>% 
+  knitr::kable()
+
+# Loadings
+PCA %>% plot
+
+# Biplot
+
+
+loadings <- as.data.frame(PCA$rotation)
+scores <- as.data.frame(PCA$x)
+label <- rownames(loadings)
+
+# Faz um biplot
+pca_plot <- ggplot()+
+  geom_point(data = dados_pca, aes(x=PC1, y=PC2, color=factor(dd$cluster)), show.legend = F)+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  geom_segment(data = loadings, aes(x=0,y=0,xend=10*PC1,yend=10*PC2, alpha = 0.5),
+                                                                                               arrow=arrow(length=unit(0.7,"cm")), show.legend = F, color = "red")+
+  geom_text(data = loadings, aes(x=10*PC1, y=10*PC2, label = label),color="black", size = 4, nudge_x = 0.03, nudge_y = 0.04)+
+  xlab("PC1 (51.77 %)")+
+  ylab("PC2 (31.6 %)")+ggtitle("PCA of the network metrics")
+
+# png("/home/marcio/PROJETOS-GIT/redes1/pca_metricas.png", res = 300, width = 2500, height = 2100)
+# pca_plot
+# dev.off()
+
+
 # Mean annual temperature
-MAT.robus <- dados1 %>% ggplot()+
-  aes(x=MAT, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+MAT.robus <- dd %>% ggplot()+
+  aes(x=MAT, y=robustez_low, size=Species, alpha=0.6, color=factor(dd$cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual temperature")+
   ylab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("A")
 
-MAT.conn <- dados1 %>% ggplot()+
-  aes(x=MAT, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+MAT.conn <- dd %>% ggplot()+
+  aes(x=MAT, y=Connectance, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual temperature")+
   ylab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("B")
 
-MAT.inter <- dados1 %>% ggplot()+
-  aes(x=MAT, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+MAT.inter <- dd %>% ggplot()+
+  aes(x=MAT, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual temperature")+
   ylab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("C")
 
 
 # Mean annual precipitation
-MAP.robus <- dados1 %>% ggplot()+
-  aes(x=MAP, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+MAP.robus <- dd %>% ggplot()+
+  aes(x=MAP, y=robustez_low, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual precipitation")+
   ylab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("A")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("A")
 
-MAP.conn <- dados1 %>% ggplot()+
-  aes(x=MAP, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+MAP.conn <- dd %>% ggplot()+
+  aes(x=MAP, y=Connectance, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual precipitation")+
   ylab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("B")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("B")
 
-MAP.inter <- dados1 %>% ggplot()+
-  aes(x=MAP, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+MAP.inter <- dd %>% ggplot()+
+  aes(x=MAP, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Mean annual precipitation")+
   ylab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("C")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("C")
 
 # precipitation seasonality (coefficient of variation)
-CV.robus <- dados1 %>% ggplot()+
-  aes(x=CV, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+CV.robus <- dd %>% ggplot()+
+  aes(x=CV, y=robustez_low, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Precipitation seasonality (cv)")+
   ylab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("A")
 
-CV.conn <- dados1 %>% ggplot()+
-  aes(x=CV, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+CV.conn <- dd %>% ggplot()+
+  aes(x=CV, y=Connectance, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Precipitation seasonality (cv)")+
   ylab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("B")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("B")
 
-CV.inter <- dados1 %>% ggplot()+
-  aes(x=CV, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+CV.inter <- dd %>% ggplot()+
+  aes(x=CV, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Precipitation seasonality (cv)")+
   ylab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("C")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("C")
 
 # temperature seasonality
-TS.robus <- dados1 %>% ggplot()+
-  aes(x=TS, y=robustez_low, size=Species, alpha=0.6, color=factor(Região))+
+TS.robus <- dd %>% ggplot()+
+  aes(x=TS, y=robustez_low, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Temperature seasonality")+
   ylab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("A")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("A")
 
-TS.conn <- dados1 %>% ggplot()+
-  aes(x=TS, y=Connectance, size=Species, alpha=0.6, color=factor(Região))+
+TS.conn <- dd %>% ggplot()+
+  aes(x=TS, y=Connectance, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Temperature seasonality")+
   ylab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("B")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("B")
 
-TS.inter <- dados1 %>% ggplot()+
-  aes(x=TS, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(Região))+
+TS.inter <- dd %>% ggplot()+
+  aes(x=TS, y=Interactions %>% log, size=Species, alpha=0.6, color=factor(cluster))+
   geom_point(show.legend = F)+
   xlab("Temperature seasonality")+
   ylab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("C")
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+  ggtitle("C")
 
 
-# png("/home/marcio/PROJETOS-GIT/redes_ecologicas/métricas_vs_MAT.png", res = 300, width=3000, height = 2400)
-# (MAT.robus|MAT.conn|MAT.inter)
-# dev.off()
+#  png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_MAT.png", res = 300, width=3000, height = 2400)
+#  (MAT.robus|MAT.conn|MAT.inter)
+#  dev.off()
 # 
-# png("/home/marcio/PROJETOS-GIT/redes_ecologicas/métricas_vs_MAP.png", res = 300, width=3000, height = 2400)
+# png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_MAP.png", res = 300, width=3000, height = 2400)
 #   (MAP.robus|MAP.conn|MAP.inter)
 # dev.off()
-# 
-# png("/home/marcio/PROJETOS-GIT/redes_ecologicas/métricas_vs_CV.png", res = 300, width=3000, height = 2400)
+#
+# png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_CV.png", res = 300, width=3000, height = 2400)
 #   (CV.robus|CV.conn|CV.inter)
 # dev.off()
 # 
-# png("/home/marcio/PROJETOS-GIT/redes_ecologicas/métricas_vs_TS.png", res = 300, width=3000, height = 2400)
+# png("/home/marcio/PROJETOS-GIT/redes1/métricas_vs_TS.png", res = 300, width=3000, height = 2400)
 #   (TS.robus|TS.conn|TS.inter)
 # dev.off()
 
-# png("robus_vs_envir.png", res = 300, width = 2500, height = 2500)
-# (MAP.map|MAT.map)/(CV.map|TS.map)
-# dev.off()
+png("robus_vs_envir.png", res = 300, width = 2500, height = 2500)
+(MAP.map|MAT.map)/(CV.map|TS.map)
+dev.off()
 
-densidade_rob <- dados1 %>% ggplot() +
-  geom_density(aes(x=robustez_low, col = factor(Região), alpha=0.5), show.legend = F)+
+densidade_rob <- dd %>% ggplot() +
+  geom_density(aes(x=robustez_low, col = factor(cluster), alpha=0.5), show.legend = F)+
   xlab("Robustness")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("A")
 
-densidade_int <- dados1 %>% ggplot() +
-  geom_density(aes(x=Interactions %>% log, col = factor(Região), alpha=0.5), show.legend = F)+
+densidade_int <- dd %>% ggplot() +
+  geom_density(aes(x=Interactions %>% log, col = factor(c.uster), alpha=0.5), show.legend = F)+
   xlab("Interactions (log)")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("B")
 
-densidade_con <- dados1 %>% ggplot() +
-  geom_density(aes(x=Connectance, col = factor(Região), alpha=0.5), show.legend = F)+
+densidade_con <- dd %>% ggplot() +
+  geom_density(aes(x=Connectance, col = factor(cluster), alpha=0.5), show.legend = F)+
   xlab("Connectance")+
-  scale_color_manual(values=c("darkgrey", "orange2"))+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
   ggtitle("C")
 
-# png("densidade.png", res=300, width =3000, height = 2300)
-# (densidade_rob|densidade_int|densidade_con)
-# dev.off()
-
-
-### boxplots
-box_rob <- dados1 %>% ggplot() +
-  geom_boxplot(aes(y=robustez_low, x= factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
-  ylab("Robustness")+
-  scale_fill_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("A")
-
-box_int <- dados1 %>% ggplot() +
-  geom_boxplot(aes(y=Interactions %>% log, x= factor(Região),fill = factor(Região), alpha=0.5), show.legend = F)+
-  ylab("Interactions (log)")+
-  scale_fill_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("B")
-
-box_con <- dados1 %>% ggplot() +
-  geom_boxplot(aes(y=Connectance, x=factor(Região), fill = factor(Região), alpha=0.5), show.legend = F)+
-  ylab("Connectance")+
-  scale_fill_manual(values=c("darkgrey", "orange2"))+
-  ggtitle("C")
-
-png("boxplot_metricas.png", res=300, width = 2300, height = 2000)
-(box_rob|box_int|box_con)
+png("/home/marcio/PROJETOS-GIT/redes1/densidade.png", res=300, width =3000, height = 2300)
+(densidade_rob|densidade_int|densidade_con)
 dev.off()
 
 
-t.test(dados1$robustez_low~factor(dados1$Região))
-t.test(dados1$Connectance~factor(dados1$Região))
-t.test(dados1$Interactions %>% log~factor(dados1$Região))
+
+### boxplots
+box_rob <- dd %>% ggplot() +
+  geom_boxplot(aes(y=robustez_low, x= factor(cluster), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Robustness")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("A")
+
+box_int <- dd %>% ggplot() +
+  geom_boxplot(aes(y=Interactions %>% log, x= factor(cluster),fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Interactions (log)")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("B")
+
+box_con <- dd %>% ggplot() +
+  geom_boxplot(aes(y=Connectance, x=factor(cluster), fill = factor(Região), alpha=0.5), show.legend = F)+
+  ylab("Connectance")+
+  scale_color_manual(values=c("darkgrey", "orange2", "black", "brown", "blue"))+
+  ggtitle("C")
+
+png("/home/marcio/PROJETOS-GIT/redes1/boxplot_metricas.png", res=300, width = 2300, height = 2000)
+(box_rob|box_int|box_con)
+dev.off()
+
