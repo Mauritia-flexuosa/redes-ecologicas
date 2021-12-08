@@ -208,7 +208,7 @@ km.res <- kmeans(iris.scaled, 3, nstart = 10)
 
 ##### PCA
 
-Distibuição dos dados em relação aos dois primeiros eixos principais da PCA que juntos explicam 87,37% da variação nos dados. O biplot da PCA mostra como os dados estão "espalhados" em relação às métricas de rede onde as cores correspondem a cada um dos 5 grupos clusterizados pelo kmeans.
+Distibuição dos dados em relação aos dois primeiros eixos principais da PCA que juntos explicam 87,37% da variação nos dados. O biplot da PCA mostra como os dados estão "espalhados" em relação às métricas de rede onde **as cores correspondem a cada um dos 5 grupos** clusterizados pelo kmeans.
 
 
 <img src= "pca_metricas.png"/>
